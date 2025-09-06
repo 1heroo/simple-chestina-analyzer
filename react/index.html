@@ -213,14 +213,50 @@
                 { code: 'ko-KR', name: 'Корейский' }
             ];
 
+            const checkMediaSupport = () => {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    return {
+                        supported: false,
+                        reason: 'MediaDevices API not supported. Please use HTTPS or a modern browser.'
+                    };
+                }
+                
+                if (!window.MediaRecorder) {
+                    return {
+                        supported: false,
+                        reason: 'MediaRecorder API not supported in this browser.'
+                    };
+                }
+                
+                return { supported: true };
+            };
+
             const startRecording = async () => {
+                // Проверяем поддержку API
+                const mediaSupport = checkMediaSupport();
+                if (!mediaSupport.supported) {
+                    setError(mediaSupport.reason);
+                    return;
+                }
+
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            sampleRate: 16000
+                        } 
+                    });
+                    
+                    mediaRecorderRef.current = new MediaRecorder(stream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
                     audioChunksRef.current = [];
 
                     mediaRecorderRef.current.ondataavailable = (event) => {
-                        audioChunksRef.current.push(event.data);
+                        if (event.data.size > 0) {
+                            audioChunksRef.current.push(event.data);
+                        }
                     };
 
                     mediaRecorderRef.current.onstop = () => {
@@ -229,7 +265,12 @@
                         stream.getTracks().forEach(track => track.stop());
                     };
 
-                    mediaRecorderRef.current.start();
+                    mediaRecorderRef.current.onerror = (event) => {
+                        console.error('MediaRecorder error:', event.error);
+                        setError('Recording error: ' + event.error.message);
+                    };
+
+                    mediaRecorderRef.current.start(1000); // Записываем чанками по 1 секунде
                     setIsRecording(true);
                     setError('');
                 } catch (err) {
@@ -239,7 +280,21 @@
                         message: err.message,
                         stack: err.stack
                     });
-                    setError('Microphone access error: ' + err.message);
+                    
+                    let errorMessage = 'Microphone access error: ';
+                    if (err.name === 'NotAllowedError') {
+                        errorMessage += 'Permission denied. Please allow microphone access.';
+                    } else if (err.name === 'NotFoundError') {
+                        errorMessage += 'No microphone found. Please connect a microphone.';
+                    } else if (err.name === 'NotSupportedError') {
+                        errorMessage += 'Audio recording not supported in this browser.';
+                    } else if (err.name === 'SecurityError') {
+                        errorMessage += 'Security error. Please use HTTPS.';
+                    } else {
+                        errorMessage += err.message;
+                    }
+                    
+                    setError(errorMessage);
                 }
             };
 
@@ -455,6 +510,9 @@
                                     ✅ Audio Recorded
                                 </span>
                             )}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                            📋 <strong>Requirements:</strong> HTTPS connection and microphone permission required for audio recording
                         </div>
                     </div>
 
