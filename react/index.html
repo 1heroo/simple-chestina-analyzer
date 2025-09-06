@@ -414,7 +414,7 @@
                         audio_size: requestData.audio_data.length
                     });
                     
-                    const response = await fetch('http://85.198.82.170:12500/api/v1/azure/pronunciation-assessment', {
+                    const response = await fetch('/api/v1/azure/pronunciation-assessment', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
