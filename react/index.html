@@ -269,7 +269,7 @@
                 try {
                     const audioBase64 = await convertToBase64(audioBlob);
                     
-                    const response = await fetch('http://85.198.82.170:12500/azure/pronunciation-assessment', {
+                    const response = await fetch('http://85.198.82.170:12500/api/v1/azure/pronunciation-assessment', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
