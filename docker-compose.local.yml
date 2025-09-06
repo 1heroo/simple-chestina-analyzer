@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: pronunciation-api-local
     ports:
-      - "8000:8000"
+      - "12500:8000"
     environment:
       # Azure Configuration
       - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
@@ -21,7 +21,7 @@ services:
       - APP_DEBUG=true
       - APP_HOST=0.0.0.0
       - APP_PORT=8000
-      - APP_CORS_ORIGINS=["http://localhost:3000","http://localhost:8080","http://127.0.0.1:3000","http://127.0.0.1:8080","capacitor://localhost","ionic://localhost","http://localhost","https://localhost"]
+      - APP_CORS_ORIGINS=["*"]
     
     volumes:
       # Монтируем код для hot reload в разработке
@@ -38,6 +38,20 @@ services:
       retries: 3
       start_period: 40s
     
+    networks:
+      - pronunciation-network
+
+  # Nginx для обслуживания React приложения
+  frontend:
+    image: nginx:alpine
+    container_name: pronunciation-frontend-local
+    ports:
+      - "12501:80"
+    volumes:
+      - ./react:/usr/share/nginx/html
+      - ./nginx/frontend.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - pronunciation-api
     networks:
       - pronunciation-network
 
