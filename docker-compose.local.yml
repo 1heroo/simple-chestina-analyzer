@@ -41,19 +41,31 @@ services:
     networks:
       - pronunciation-network
 
-  # Nginx для обслуживания React приложения (HTTP для разработки)
+  # Nginx для обслуживания React приложения с SSL
   frontend:
     image: nginx:alpine
     container_name: pronunciation-frontend-local
     ports:
-      - "12501:80"
+      - "12501:443"
+      - "12502:80"
     volumes:
       - ./react:/usr/share/nginx/html
-      - ./nginx/frontend-dev.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/frontend.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/nginx/ssl
     depends_on:
       - pronunciation-api
     networks:
       - pronunciation-network
+    command: >
+      sh -c "
+      if [ ! -f /etc/nginx/ssl/nginx.crt ]; then
+        apk add --no-cache openssl &&
+        mkdir -p /etc/nginx/ssl &&
+        openssl genrsa -out /etc/nginx/ssl/nginx.key 2048 &&
+        openssl req -new -x509 -key /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt -days 365 -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost'
+      fi &&
+      nginx -g 'daemon off;'
+      "
 
 
 networks:
