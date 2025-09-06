@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  pronunciation-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pronunciation-api-prod
+    ports:
+      - "8000:8000"
+    environment:
+      # Azure Configuration
+      - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
+      - AZURE_SPEECH_REGION=${AZURE_SPEECH_REGION:-eastus}
+      - AZURE_DEFAULT_LANGUAGE=${AZURE_DEFAULT_LANGUAGE:-cs-CZ}
+      - AZURE_TIMEOUT=${AZURE_TIMEOUT:-30}
+      
+      # Application Configuration
+      - APP_NAME=Pronunciation Assessment API
+      - APP_VERSION=1.0.0
+      - APP_DEBUG=false
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - APP_CORS_ORIGINS=${APP_CORS_ORIGINS:-["https://yourdomain.com","https://app.yourdomain.com","capacitor://localhost","ionic://localhost"]}
+    
+    restart: always
+    
+    # Ограничения ресурсов для продакшена
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Healthcheck для мониторинга
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Логирование
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    networks:
+      - pronunciation-network
+
+  # Nginx reverse proxy для продакшена
+  nginx:
+    image: nginx:alpine
+    container_name: pronunciation-nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/nginx/ssl  # SSL сертификаты
+    depends_on:
+      - pronunciation-api
+    restart: always
+    networks:
+      - pronunciation-network
+
+  # Redis для кэширования (опционально)
+  redis:
+    image: redis:7-alpine
+    container_name: pronunciation-redis-prod
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - pronunciation-network
+    profiles:
+      - with-redis
+
+  # Prometheus для мониторинга (опционально)
+  prometheus:
+    image: prom/prometheus
+    container_name: pronunciation-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    restart: always
+    networks:
+      - pronunciation-network
+    profiles:
+      - with-monitoring
+
+  # Grafana для визуализации метрик (опционально)
+  grafana:
+    image: grafana/grafana
+    container_name: pronunciation-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: always
+    networks:
+      - pronunciation-network
+    profiles:
+      - with-monitoring
+
+volumes:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  pronunciation-network:
+    driver: bridge

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pronunciation Assessment</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e1e5e9;
+        }
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+        .btn-record {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-record.recording {
+            background: #28a745;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .score-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .score-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .words-analysis {
+            margin-top: 20px;
+        }
+        .word-item {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .word-correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .word-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef } = React;
+
+        function PronunciationAssessment() {
+            const [referenceText, setReferenceText] = useState('');
+            const [language, setLanguage] = useState('cs-CZ');
+            const [isRecording, setIsRecording] = useState(false);
+            const [audioBlob, setAudioBlob] = useState(null);
+            const [results, setResults] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            
+            const mediaRecorderRef = useRef(null);
+            const audioChunksRef = useRef([]);
+
+            const languages = [
+                { code: 'cs-CZ', name: 'Чешский' },
+                { code: 'en-US', name: 'Английский (США)' },
+                { code: 'de-DE', name: 'Немецкий' },
+                { code: 'fr-FR', name: 'Французский' },
+                { code: 'es-ES', name: 'Испанский' },
+                { code: 'it-IT', name: 'Итальянский' },
+                { code: 'pt-BR', name: 'Португальский (Бразилия)' },
+                { code: 'ru-RU', name: 'Русский' },
+                { code: 'zh-CN', name: 'Китайский' },
+                { code: 'ja-JP', name: 'Японский' },
+                { code: 'ko-KR', name: 'Корейский' }
+            ];
+
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    audioChunksRef.current = [];
+
+                    mediaRecorderRef.current.ondataavailable = (event) => {
+                        audioChunksRef.current.push(event.data);
+                    };
+
+                    mediaRecorderRef.current.onstop = () => {
+                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                        setAudioBlob(audioBlob);
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorderRef.current.start();
+                    setIsRecording(true);
+                    setError('');
+                } catch (err) {
+                    setError('Ошибка доступа к микрофону: ' + err.message);
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorderRef.current && isRecording) {
+                    mediaRecorderRef.current.stop();
+                    setIsRecording(false);
+                }
+            };
+
+            const convertToBase64 = (blob) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            };
+
+            const analyzePronounciation = async () => {
+                if (!audioBlob || !referenceText.trim()) {
+                    setError('Пожалуйста, введите текст и запишите аудио');
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+                setResults(null);
+
+                try {
+                    const audioBase64 = await convertToBase64(audioBlob);
+                    
+                    const response = await fetch('/azure/pronunciation-assessment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            audio_data: audioBase64,
+                            reference_text: referenceText,
+                            language: language
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Ошибка сервера');
+                    }
+
+                    const data = await response.json();
+                    setResults(data);
+                } catch (err) {
+                    setError('Ошибка анализа: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const getScoreColor = (score) => {
+                if (score >= 80) return '#28a745';
+                if (score >= 60) return '#ffc107';
+                return '#dc3545';
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🎤 Анализ произношения</h1>
+                        <p>Загрузите аудио и получите детальный анализ вашего произношения с помощью Azure AI</p>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Референсный текст:</label>
+                        <textarea
+                            value={referenceText}
+                            onChange={(e) => setReferenceText(e.target.value)}
+                            placeholder="Введите текст, который вы будете произносить..."
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label>Язык:</label>
+                        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                            {languages.map(lang => (
+                                <option key={lang.code} value={lang.code}>
+                                    {lang.name} ({lang.code})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Аудио запись:</label>
+                        <div className="audio-controls">
+                            <button
+                                className={`btn-record ${isRecording ? 'recording' : ''}`}
+                                onClick={isRecording ? stopRecording : startRecording}
+                            >
+                                {isRecording ? '⏹️ Остановить запись' : '🎤 Начать запись'}
+                            </button>
+                            {audioBlob && (
+                                <span style={{ color: '#28a745', fontSize: '14px' }}>
+                                    ✅ Аудио записано
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <button
+                        className="btn-primary"
+                        onClick={analyzePronounciation}
+                        disabled={loading || !audioBlob || !referenceText.trim()}
+                        style={{ width: '100%', marginTop: '20px' }}
+                    >
+                        {loading ? 'Анализируем...' : '🔍 Анализировать произношение'}
+                    </button>
+
+                    {loading && (
+                        <div className="loading">
+                            <div className="spinner"></div>
+                            <p>Обрабатываем ваше произношение...</p>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="error">
+                            <strong>Ошибка:</strong> {error}
+                        </div>
+                    )}
+
+                    {results && (
+                        <div className="results">
+                            <h3>📊 Результаты анализа</h3>
+                            
+                            <div style={{ marginBottom: '20px' }}>
+                                <p><strong>Распознанный текст:</strong> "{results.recognized_text}"</p>
+                                <p><strong>Референсный текст:</strong> "{results.reference_text}"</p>
+                            </div>
+
+                            <div className="score-grid">
+                                <div className="score-card">
+                                    <div className="score-value" style={{ color: getScoreColor(results.scores.pronunciation_score) }}>
+                                        {results.scores.pronunciation_score.toFixed(1)}
+                                    </div>
+                                    <div className="score-label">Общая оценка</div>
+                                </div>
+                                <div className="score-card">
+                                    <div className="score-value" style={{ color: getScoreColor(results.scores.accuracy_score) }}>
+                                        {results.scores.accuracy_score.toFixed(1)}
+                                    </div>
+                                    <div className="score-label">Точность</div>
+                                </div>
+                                <div className="score-card">
+                                    <div className="score-value" style={{ color: getScoreColor(results.scores.fluency_score) }}>
+                                        {results.scores.fluency_score.toFixed(1)}
+                                    </div>
+                                    <div className="score-label">Беглость</div>
+                                </div>
+                                <div className="score-card">
+                                    <div className="score-value" style={{ color: getScoreColor(results.scores.completeness_score) }}>
+                                        {results.scores.completeness_score.toFixed(1)}
+                                    </div>
+                                    <div className="score-label">Полнота</div>
+                                </div>
+                            </div>
+
+                            {results.words_analysis && results.words_analysis.length > 0 && (
+                                <div className="words-analysis">
+                                    <h4>📝 Анализ слов:</h4>
+                                    <div>
+                                        {results.words_analysis.map((word, index) => (
+                                            <span
+                                                key={index}
+                                                className={`word-item ${word.error_type === 'None' ? 'word-correct' : 'word-error'}`}
+                                                title={`Точность: ${word.accuracy_score.toFixed(1)}%, Тип ошибки: ${word.error_type}`}
+                                            >
+                                                {word.word}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<PronunciationAssessment />, document.getElementById('root'));
+    </script>
+</body>
+</html>
