@@ -8,7 +8,7 @@ import json
 import base64
 
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:10000"
 
 
 def load_example_audio():

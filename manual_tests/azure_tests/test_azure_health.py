@@ -7,7 +7,7 @@ import asyncio
 import json
 
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:10000"
 
 
 async def test_azure_health_endpoint():

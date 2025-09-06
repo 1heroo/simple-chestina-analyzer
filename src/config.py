@@ -46,7 +46,7 @@ class AppConfig(BaseSettings):
     version: str = "1.0.0"
     debug: bool = False
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 10000
     cors_origins: str = '["*"]'
     
     class Config:
@@ -58,6 +58,7 @@ class AppConfig(BaseSettings):
         """Парсинг CORS origins из строки JSON."""
         try:
             return json.loads(self.cors_origins)
+            
         except json.JSONDecodeError:
             return ["http://localhost:3000", "http://localhost:8080"]
 
