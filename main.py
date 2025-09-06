@@ -50,6 +50,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+print(app_config.cors_origins_list)
+
 # Middleware для доверенных хостов (безопасность)
 app.add_middleware(
     TrustedHostMiddleware,

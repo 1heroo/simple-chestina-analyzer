@@ -11,7 +11,7 @@ import base64
 from pathlib import Path
 
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://85.198.82.170:12500"
 
 
 def load_example_audio():

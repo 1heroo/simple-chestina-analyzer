@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pronunciation Assessment</title>
+    <title>Phrase Practice - Czech Learning</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -188,8 +188,8 @@
         const { useState, useRef } = React;
 
         function PronunciationAssessment() {
-            const [referenceText, setReferenceText] = useState('');
-            const [language, setLanguage] = useState('cs-CZ');
+            const referenceText = 'Jmenuji se';
+            const language = 'cs-CZ';
             const [isRecording, setIsRecording] = useState(false);
             const [audioBlob, setAudioBlob] = useState(null);
             const [results, setResults] = useState(null);
@@ -257,8 +257,8 @@
             };
 
             const analyzePronounciation = async () => {
-                if (!audioBlob || !referenceText.trim()) {
-                    setError('Пожалуйста, введите текст и запишите аудио');
+                if (!audioBlob) {
+                    setError('Please record your pronunciation of "Jmenuji se"');
                     return;
                 }
 
@@ -269,7 +269,7 @@
                 try {
                     const audioBase64 = await convertToBase64(audioBlob);
                     
-                    const response = await fetch('/azure/pronunciation-assessment', {
+                    const response = await fetch('http://85.198.82.170:12500/azure/pronunciation-assessment', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -304,42 +304,53 @@
             return (
                 <div className="container">
                     <div className="header">
-                        <h1>🎤 Анализ произношения</h1>
-                        <p>Загрузите аудио и получите детальный анализ вашего произношения с помощью Azure AI</p>
+                        <h1>📚 Phrase Practice</h1>
+                        <p>Learn Czech pronunciation by watching the video and repeating the phrase</p>
+                    </div>
+
+                    <div className="video-section" style={{ marginBottom: '30px', textAlign: 'center' }}>
+                        <h3 style={{ marginBottom: '15px', color: '#333' }}>📹 Watch and Listen</h3>
+                        <video 
+                            controls 
+                            style={{ 
+                                width: '100%', 
+                                maxWidth: '500px', 
+                                borderRadius: '10px',
+                                boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            <source src="media/example.mp4" type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
+                        <div style={{ 
+                            marginTop: '15px', 
+                            fontSize: '24px', 
+                            fontWeight: 'bold', 
+                            color: '#667eea',
+                            padding: '10px',
+                            background: '#f8f9fa',
+                            borderRadius: '8px',
+                            border: '2px solid #e1e5e9'
+                        }}>
+                            "Jmenuji se"
+                        </div>
+                        <p style={{ color: '#666', fontSize: '14px', marginTop: '10px' }}>
+                            Practice saying this Czech phrase meaning "My name is"
+                        </p>
                     </div>
 
                     <div className="form-group">
-                        <label>Референсный текст:</label>
-                        <textarea
-                            value={referenceText}
-                            onChange={(e) => setReferenceText(e.target.value)}
-                            placeholder="Введите текст, который вы будете произносить..."
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Язык:</label>
-                        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                            {languages.map(lang => (
-                                <option key={lang.code} value={lang.code}>
-                                    {lang.name} ({lang.code})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Аудио запись:</label>
+                        <label>Record Your Pronunciation:</label>
                         <div className="audio-controls">
                             <button
                                 className={`btn-record ${isRecording ? 'recording' : ''}`}
                                 onClick={isRecording ? stopRecording : startRecording}
                             >
-                                {isRecording ? '⏹️ Остановить запись' : '🎤 Начать запись'}
+                                {isRecording ? '⏹️ Stop Recording' : '🎤 Start Recording'}
                             </button>
                             {audioBlob && (
                                 <span style={{ color: '#28a745', fontSize: '14px' }}>
-                                    ✅ Аудио записано
+                                    ✅ Audio Recorded
                                 </span>
                             )}
                         </div>
@@ -348,32 +359,32 @@
                     <button
                         className="btn-primary"
                         onClick={analyzePronounciation}
-                        disabled={loading || !audioBlob || !referenceText.trim()}
+                        disabled={loading || !audioBlob}
                         style={{ width: '100%', marginTop: '20px' }}
                     >
-                        {loading ? 'Анализируем...' : '🔍 Анализировать произношение'}
+                        {loading ? 'Analyzing...' : '🔍 Check My Pronunciation'}
                     </button>
 
                     {loading && (
                         <div className="loading">
                             <div className="spinner"></div>
-                            <p>Обрабатываем ваше произношение...</p>
+                            <p>Analyzing your pronunciation...</p>
                         </div>
                     )}
 
                     {error && (
                         <div className="error">
-                            <strong>Ошибка:</strong> {error}
+                            <strong>Error:</strong> {error}
                         </div>
                     )}
 
                     {results && (
                         <div className="results">
-                            <h3>📊 Результаты анализа</h3>
+                            <h3>📊 Pronunciation Results</h3>
                             
                             <div style={{ marginBottom: '20px' }}>
-                                <p><strong>Распознанный текст:</strong> "{results.recognized_text}"</p>
-                                <p><strong>Референсный текст:</strong> "{results.reference_text}"</p>
+                                <p><strong>What you said:</strong> "{results.recognized_text}"</p>
+                                <p><strong>Target phrase:</strong> "{results.reference_text}"</p>
                             </div>
 
                             <div className="score-grid">
@@ -381,37 +392,37 @@
                                     <div className="score-value" style={{ color: getScoreColor(results.scores.pronunciation_score) }}>
                                         {results.scores.pronunciation_score.toFixed(1)}
                                     </div>
-                                    <div className="score-label">Общая оценка</div>
+                                    <div className="score-label">Overall Score</div>
                                 </div>
                                 <div className="score-card">
                                     <div className="score-value" style={{ color: getScoreColor(results.scores.accuracy_score) }}>
                                         {results.scores.accuracy_score.toFixed(1)}
                                     </div>
-                                    <div className="score-label">Точность</div>
+                                    <div className="score-label">Accuracy</div>
                                 </div>
                                 <div className="score-card">
                                     <div className="score-value" style={{ color: getScoreColor(results.scores.fluency_score) }}>
                                         {results.scores.fluency_score.toFixed(1)}
                                     </div>
-                                    <div className="score-label">Беглость</div>
+                                    <div className="score-label">Fluency</div>
                                 </div>
                                 <div className="score-card">
                                     <div className="score-value" style={{ color: getScoreColor(results.scores.completeness_score) }}>
                                         {results.scores.completeness_score.toFixed(1)}
                                     </div>
-                                    <div className="score-label">Полнота</div>
+                                    <div className="score-label">Completeness</div>
                                 </div>
                             </div>
 
                             {results.words_analysis && results.words_analysis.length > 0 && (
                                 <div className="words-analysis">
-                                    <h4>📝 Анализ слов:</h4>
+                                    <h4>📝 Word Analysis:</h4>
                                     <div>
                                         {results.words_analysis.map((word, index) => (
                                             <span
                                                 key={index}
                                                 className={`word-item ${word.error_type === 'None' ? 'word-correct' : 'word-error'}`}
-                                                title={`Точность: ${word.accuracy_score.toFixed(1)}%, Тип ошибки: ${word.error_type}`}
+                                                title={`Accuracy: ${word.accuracy_score.toFixed(1)}%, Error type: ${word.error_type}`}
                                             >
                                                 {word.word}
                                             </span>

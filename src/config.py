@@ -47,7 +47,7 @@ class AppConfig(BaseSettings):
     debug: bool = False
     host: str = "0.0.0.0"
     port: int = 8000
-    cors_origins: str = '["http://localhost:3000","http://localhost:8080","http://127.0.0.1:3000","http://127.0.0.1:8080","capacitor://localhost","ionic://localhost","http://localhost","https://localhost"]'
+    cors_origins: str = '["*"]'
     
     class Config:
         env_prefix = "APP_"
