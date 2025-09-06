@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -200,17 +200,17 @@
             const audioChunksRef = useRef([]);
 
             const languages = [
-                { code: 'cs-CZ', name: 'Чешский' },
-                { code: 'en-US', name: 'Английский (США)' },
-                { code: 'de-DE', name: 'Немецкий' },
-                { code: 'fr-FR', name: 'Французский' },
-                { code: 'es-ES', name: 'Испанский' },
-                { code: 'it-IT', name: 'Итальянский' },
-                { code: 'pt-BR', name: 'Португальский (Бразилия)' },
-                { code: 'ru-RU', name: 'Русский' },
-                { code: 'zh-CN', name: 'Китайский' },
-                { code: 'ja-JP', name: 'Японский' },
-                { code: 'ko-KR', name: 'Корейский' }
+                { code: 'cs-CZ', name: 'Czech' },
+                { code: 'en-US', name: 'English (US)' },
+                { code: 'de-DE', name: 'German' },
+                { code: 'fr-FR', name: 'French' },
+                { code: 'es-ES', name: 'Spanish' },
+                { code: 'it-IT', name: 'Italian' },
+                { code: 'pt-BR', name: 'Portuguese (Brazil)' },
+                { code: 'ru-RU', name: 'Russian' },
+                { code: 'zh-CN', name: 'Chinese' },
+                { code: 'ja-JP', name: 'Japanese' },
+                { code: 'ko-KR', name: 'Korean' }
             ];
 
             const checkMediaSupport = () => {
@@ -270,11 +270,11 @@
                         setError('Recording error: ' + event.error.message);
                     };
 
-                    mediaRecorderRef.current.start(1000); // Записываем чанками по 1 секунде
+                    mediaRecorderRef.current.start(1000); // Record in 1-second chunks
                     setIsRecording(true);
                     setError('');
                 } catch (err) {
-                    console.error('Ошибка startRecording:', err);
+                    console.error('startRecording error:', err);
                     console.error('Microphone error details:', {
                         name: err.name,
                         message: err.message,
@@ -314,12 +314,12 @@
                             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                             const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
                             
-                            // Конвертируем в WAV формат
+                            // Convert to WAV format
                             const wavBuffer = audioBufferToWav(audioBuffer);
                             const base64 = arrayBufferToBase64(wavBuffer);
                             resolve(base64);
                         } catch (error) {
-                            console.error('Ошибка convertToWavBase64:', error);
+                            console.error('convertToWavBase64 error:', error);
                             console.error('Error details:', {
                                 name: error.name,
                                 message: error.message,
@@ -408,7 +408,7 @@
                         language: language
                     };
                     
-                    console.log('Отправляем данные:', {
+                    console.log('Sending data:', {
                         reference_text: requestData.reference_text,
                         language: requestData.language,
                         audio_size: requestData.audio_data.length
@@ -424,13 +424,13 @@
 
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.detail || 'Ошибка сервера');
+                        throw new Error(errorData.detail || 'Server error');
                     }
 
                     const data = await response.json();
                     setResults(data);
                 } catch (err) {
-                    console.error('Ошибка в analyzePronounciation:', err);
+                    console.error('analyzePronounciation error:', err);
                     console.error('Stack trace:', err.stack);
                     
                     let errorMessage = 'Analysis error: ';
@@ -461,12 +461,12 @@
             return (
                 <div className="container">
                     <div className="header">
-                        <h1>📚 Phrase Practice</h1>
+                        <h1>Phrase Practice</h1>
                         <p>Learn Czech pronunciation by watching the video and repeating the phrase</p>
                     </div>
 
                     <div className="video-section" style={{ marginBottom: '30px', textAlign: 'center' }}>
-                        <h3 style={{ marginBottom: '15px', color: '#333' }}>📹 Watch and Listen</h3>
+                        <h3 style={{ marginBottom: '15px', color: '#333' }}>Watch and Listen</h3>
                         <video 
                             controls 
                             style={{ 
@@ -503,16 +503,16 @@
                                 className={`btn-record ${isRecording ? 'recording' : ''}`}
                                 onClick={isRecording ? stopRecording : startRecording}
                             >
-                                {isRecording ? '⏹️ Stop Recording' : '🎤 Start Recording'}
+                                {isRecording ? 'Stop Recording' : 'Start Recording'}
                             </button>
                             {audioBlob && (
                                 <span style={{ color: '#28a745', fontSize: '14px' }}>
-                                    ✅ Audio Recorded
+                                    Audio Recorded
                                 </span>
                             )}
                         </div>
                         <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                            📋 <strong>Requirements:</strong> HTTPS connection and microphone permission required for audio recording
+                            <strong>Requirements:</strong> HTTPS connection and microphone permission required for audio recording
                         </div>
                     </div>
 
@@ -522,7 +522,7 @@
                         disabled={loading || !audioBlob}
                         style={{ width: '100%', marginTop: '20px' }}
                     >
-                        {loading ? 'Analyzing...' : '🔍 Check My Pronunciation'}
+                        {loading ? 'Analyzing...' : 'Check My Pronunciation'}
                     </button>
 
                     {loading && (
@@ -540,7 +540,7 @@
 
                     {results && (
                         <div className="results">
-                            <h3>📊 Pronunciation Results</h3>
+                            <h3>Pronunciation Results</h3>
                             
                             <div style={{ marginBottom: '20px' }}>
                                 <p><strong>What you said:</strong> "{results.recognized_text}"</p>
@@ -576,7 +576,7 @@
 
                             {results.words_analysis && results.words_analysis.length > 0 && (
                                 <div className="words-analysis">
-                                    <h4>📝 Word Analysis:</h4>
+                                    <h4>Word Analysis:</h4>
                                     <div>
                                         {results.words_analysis.map((word, index) => (
                                             <div key={index} className="word-analysis-item" style={{ 
@@ -608,11 +608,11 @@
                                                     marginTop: '2px',
                                                     color: word.error_type === 'None' ? '#0f5132' : '#58151c'
                                                 }}>
-                                                    {word.error_type === 'None' ? '✅ Correct' : 
-                                                     word.error_type === 'Mispronunciation' ? '❌ Mispronounced' :
-                                                     word.error_type === 'Omission' ? '⚠️ Omitted' :
-                                                     word.error_type === 'Insertion' ? '➕ Extra word' :
-                                                     `⚠️ ${word.error_type}`}
+                                                    {word.error_type === 'None' ? 'Correct' : 
+                                                     word.error_type === 'Mispronunciation' ? 'Mispronounced' :
+                                                     word.error_type === 'Omission' ? 'Omitted' :
+                                                     word.error_type === 'Insertion' ? 'Extra word' :
+                                                     `${word.error_type}`}
                                                 </div>
                                             </div>
                                         ))}
